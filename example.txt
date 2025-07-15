@@ -1,0 +1,20 @@
+SetupP1 	mov.b #255,&P1DIR
+	mov.b #255,&P2DIR
+	mov.b #0,&P1OUT
+	mov.b #0,&P2OUT
+	mov.b #8 , R6
+	mov.b #16 , R7
+	mov.b #0 , R8
+
+
+Mainloop1 	bis.b R6 , &P1OUT
+	bis.b R7 , &P2OUT
+	inc R8
+	rra R6
+	rla R7
+	mov #1000 , R15
+L1 	dec R15
+	jnz L1
+	cmp #4 , R8
+	jeq SetupP1
+	jmp Mainloop1
