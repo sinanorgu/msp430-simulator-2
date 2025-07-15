@@ -72,7 +72,7 @@ def convert_execution_list(file_content):
 
 def execute(parameter_list,register_dict:dict,stack:list,memory:list):
 
-    print("given parameters:",parameter_list)
+    #print("given parameters:",parameter_list)
     if parameter_list[0] in instruction_set:
         if parameter_list[0] == 'mov' or parameter_list[0] == 'mov.b' or parameter_list[0] == 'mov.w':
             if parameter_list[1] in register_dict.keys():

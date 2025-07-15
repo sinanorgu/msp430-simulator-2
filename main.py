@@ -19,6 +19,22 @@ import micro_processor
 
 
 
+from PyQt5.QtCore import QThread, pyqtSignal
+import time
+
+running = False
+
+class Worker(QThread):
+    update_signal = pyqtSignal()  # GUI'ye sayı göndermek için
+    
+    def run(self):
+        global running
+        while running:
+            time.sleep(0.001)
+            self.update_signal.emit()
+
+
+
 class LedPanel(QWidget):
     def __init__(self, led_states):
         super().__init__()
@@ -83,11 +99,21 @@ class MainWindow(QMainWindow):
 
         self.run_btn = QPushButton("Run")
         #self.step_button.setIcon(QIcon("icons/step.png"))  # 🔍 resim yolu
-
-        self.run_btn.clicked.connect(self.debug_function)
+        self.run_btn.clicked.connect(self.run_btn_function)
         self.run_btn.setFixedWidth(100)
         self.run_btn.hide()
         self.button_layout.addWidget(self.run_btn)
+
+        self.stop_btn = QPushButton("Stop")
+        #self.step_button.setIcon(QIcon("icons/step.png"))  # 🔍 resim yolu
+        self.stop_btn.clicked.connect(self.stop_btn_function)
+        self.stop_btn.setFixedWidth(100)
+        self.stop_btn.hide()
+        self.button_layout.addWidget(self.stop_btn)
+
+
+
+
 
         self.step_btn = QPushButton("step")
         self.step_btn.clicked.connect(self.step_run_btn_funtion)
@@ -100,6 +126,7 @@ class MainWindow(QMainWindow):
         self.goto_break_point_btn.setFixedWidth(100)
         self.goto_break_point_btn.hide()
         self.button_layout.addWidget(self.goto_break_point_btn)
+
 
 
 
@@ -223,19 +250,51 @@ class MainWindow(QMainWindow):
         text = self.editor.toPlainText()
         parser.convert_execution_list(text)
         parser.find_labels(parser.code_list,micro_processor.memory)
+        self.register_info_area.update_table()
+        #self.led_panel.led_states = [False]*16
+        self.led_panel.repaint()
+
+        
     
     def quit_debug_btn_function(self):
+        global running
+        running = False
         self.debug_button.show()
         self.quit_debug.hide()
         self.run_btn.hide()
         self.step_btn.hide()
         self.goto_break_point_btn.hide()
+        self.stop_btn.hide()
 
     
     def step_run_btn_funtion(self):
         self.execute_one_step()
         self.editor.line_number_area.update()
     
+    def run_btn_function(self):
+        self.worker = Worker()
+        
+        self.stop_btn.show()
+        self.run_btn.hide()
+        self.step_btn.hide()
+        self.goto_break_point_btn.hide()
+
+        global running
+        if running == False:
+            running = True    
+            self.worker.update_signal.connect(self.step_run_btn_funtion)  # Label'a sayı yaz
+            self.worker.start()
+
+    def stop_btn_function(self):
+        global running
+        running = False
+        self.run_btn.show()
+        self.step_btn.show()
+        self.goto_break_point_btn.show()
+        self.stop_btn.hide()
+     
+  
+        
     
             
 
