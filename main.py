@@ -1,5 +1,3 @@
-#deneme satırı
-
 from PyQt5.QtWidgets import (
     QApplication, QWidget, QPlainTextEdit, QMainWindow,
     QPushButton, QVBoxLayout, QHBoxLayout, QTextEdit, QSizePolicy,QGridLayout,QAction
@@ -18,22 +16,29 @@ from PyQt5.QtGui import QIcon
 
 from PyQt5.QtWidgets import QFileDialog
 import micro_processor
-
+import code_editor_area
 
 
 from PyQt5.QtCore import QThread, pyqtSignal
 import time
 
-running = False
+running = False     
 
 class Worker(QThread):
     update_signal = pyqtSignal()  # GUI'ye sayı göndermek için
-    
+    ignore_breakpoints = True
+    mainwindow = None
     def run(self):
         global running
         while running:
-            time.sleep(0.001)
             self.update_signal.emit()
+           
+            time.sleep(0.1)
+            if Worker.ignore_breakpoints == False and parser.code_list[micro_processor.registers['pc']].line_number in code_editor_area.breakpoints:
+                running = False
+                Worker.ignore_breakpoints = True
+                
+            
 
 
 
@@ -124,7 +129,7 @@ class MainWindow(QMainWindow):
         self.button_layout.addWidget(self.step_btn)
 
         self.goto_break_point_btn = QPushButton("gbp")
-        self.goto_break_point_btn.clicked.connect(self.debug_function)
+        self.goto_break_point_btn.clicked.connect(self.goto_breakpoint_btn_function)
         self.goto_break_point_btn.setFixedWidth(100)
         self.goto_break_point_btn.hide()
         self.button_layout.addWidget(self.goto_break_point_btn)
@@ -225,20 +230,21 @@ class MainWindow(QMainWindow):
 
     def execute_one_step(self):
         pc = self.registers["pc"]
-        self.registers["pc"] = pc+1
-        parser.execute(parser.code_list[pc].line_text,self.registers,micro_processor.stack,micro_processor.memory)
-        self.register_info_area.update_table()
-        led_values = bin((self.registers['&p1dir'] %256+256) & (self.registers['&p1out'] %256 + 256))
-        for i in range(len(led_values)):
-            if i>2:
-                self.led_states[i-3] = True if led_values[i] == '1' else False
-        
-        led_values = bin((self.registers['&p2dir'] %256+256) & (self.registers['&p2out'] %256 + 256))    
-        for i in range(len(led_values)):
-            if i>2:
-                self.led_states[i-3+8] = True if led_values[i] == '1' else False
-        
-        self.led_panel.repaint()
+        if pc<len(parser.code_list):
+            self.registers["pc"] = pc+1
+            parser.execute(parser.code_list[pc].line_text,self.registers,micro_processor.stack,micro_processor.memory)
+            self.register_info_area.update_table()
+            led_values = bin((self.registers['&p1dir'] %256+256) & (self.registers['&p1out'] %256 + 256))
+            for i in range(len(led_values)):
+                if i>2:
+                    self.led_states[i-3] = True if led_values[i] == '1' else False
+            
+            led_values = bin((self.registers['&p2dir'] %256+256) & (self.registers['&p2out'] %256 + 256))    
+            for i in range(len(led_values)):
+                if i>2:
+                    self.led_states[i-3+8] = True if led_values[i] == '1' else False
+            
+            self.led_panel.repaint()
 
 
     def debug_function(self):
@@ -273,6 +279,7 @@ class MainWindow(QMainWindow):
         self.execute_one_step()
         self.editor.line_number_area.update()
     
+    
     def run_btn_function(self):
         self.worker = Worker()
         
@@ -284,28 +291,35 @@ class MainWindow(QMainWindow):
         global running
         if running == False:
             running = True    
-            self.worker.update_signal.connect(self.step_run_btn_funtion)  # Label'a sayı yaz
+            self.worker.update_signal.connect(self.step_run_btn_funtion) 
             self.worker.start()
 
     def stop_btn_function(self):
         global running
         running = False
+        self.worker.ignore_breakpoints = True
         self.run_btn.show()
         self.step_btn.show()
         self.goto_break_point_btn.show()
         self.stop_btn.hide()
      
-  
-        
-    
-            
 
+    def goto_breakpoint_btn_function(self):
+        self.worker = Worker()
+        print("bp fonksiyonuna gridim")
+        self.stop_btn.show()
+        self.run_btn.hide()
+        self.step_btn.hide()
+        self.goto_break_point_btn.hide()
 
-
-
-        
-
-
+        global running
+        if running == False:
+            running = True    
+            Worker.ignore_breakpoints = False
+            Worker.mainwindow = self
+            self.worker.update_signal.connect(self.step_run_btn_funtion) 
+            self.worker.start()
+     
 
 
 
