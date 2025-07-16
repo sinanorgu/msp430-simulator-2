@@ -16,6 +16,9 @@ from PyQt5.QtGui import QSyntaxHighlighter, QTextCharFormat, QFont, QColor
 import micro_processor
 import parser
 
+breakpoints  = set()
+
+
 
 class LineNumberArea(QWidget):
     def __init__(self, editor):
@@ -56,7 +59,8 @@ class CodeEditor(QPlainTextEdit):
     def __init__(self):
         super().__init__()
         self.line_number_area = LineNumberArea(self)
-        self.breakpoints = set()
+        global breakpoints
+        self.breakpoints = breakpoints
         self.highlighter = SimpleHighlighter(self.document())
         self.current_executing_line = -1
 
