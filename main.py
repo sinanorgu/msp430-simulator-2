@@ -1,3 +1,5 @@
+#deneme satırı
+
 from PyQt5.QtWidgets import (
     QApplication, QWidget, QPlainTextEdit, QMainWindow,
     QPushButton, QVBoxLayout, QHBoxLayout, QTextEdit, QSizePolicy,QGridLayout,QAction
